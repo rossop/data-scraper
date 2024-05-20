@@ -15,7 +15,8 @@ def setup_driver():
     Returns:
         webdriver.Chrome: A Selenium WebDriver instance for Chrome.
     """
-    driver = webdriver.Chrome()  # Ensure chromedriver is in your PATH or provide the path to it
+    # Ensure chromedriver is in your PATH or provide the path to it
+    driver = webdriver.Chrome()
     return driver
 
 
@@ -75,8 +76,7 @@ def create_directory(directory_path):
 
 
 def download_pdfs(pdf_links, pdf_directory, base_url):
-    """
-    Download each PDF from the list of PDF links.
+    """Download each PDF from the list of PDF links.
 
     This function iterates over the list of PDF links, downloads each PDF,
     and saves it to the specified directory. It handles both absolute and
@@ -90,15 +90,24 @@ def download_pdfs(pdf_links, pdf_directory, base_url):
     for pdf_link in pdf_links:
         pdf_url = pdf_link if pdf_link.startswith(
             'http') else base_url + pdf_link
-        pdf_response = requests.get(pdf_url)
-        pdf_response.raise_for_status()  # Check if the request was successful
+        try:
+            pdf_response = requests.get(
+                pdf_url, timeout=10)  # Add timeout argument
+            pdf_response.raise_for_status()  # Check if request successful
 
-        # Extract the PDF filename from the URL
-        pdf_filename = os.path.join(pdf_directory, os.path.basename(pdf_link))
+            # Extract the PDF filename from the URL
+            pdf_filename = os.path.join(
+                pdf_directory, os.path.basename(pdf_link))
 
-        # Save the PDF to the specified directory
-        with open(pdf_filename, 'wb') as pdf_file:
-            pdf_file.write(pdf_response.content)
+            # Save the PDF to the specified directory
+            with open(pdf_filename, 'wb') as pdf_file:
+                pdf_file.write(pdf_response.content)
+
+            print(f'Downloaded: {pdf_filename}')
+        except requests.exceptions.Timeout:
+            print(f'Timeout occurred while trying to download: {pdf_url}')
+        except requests.exceptions.RequestException as e:
+            print(f'Error occurred: {e}')
 
 
 def main():
