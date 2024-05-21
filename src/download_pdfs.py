@@ -1,5 +1,6 @@
 import os
 import time
+from urllib.parse import urlparse
 import requests
 from selenium import webdriver
 from bs4 import BeautifulSoup
@@ -75,8 +76,68 @@ def create_directory(directory_path):
     os.makedirs(directory_path, exist_ok=True)
 
 
+def get_base_url(url):
+    """
+    Generate the base URL from a given URL.
+
+    This function extracts the base URL from the provided URL.
+
+    Args:
+        url (str): The full URL to parse.
+
+    Returns:
+        str: The base URL.
+    """
+    parsed_url = urlparse(url)
+    base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    return base_url
+
+
+def process_urls(urls):
+    """
+    Process a list of URLs to download PDFs.
+
+    This function iterates over a list of URLs, fetching the webpage, parsing
+    the PDF links, and downloading the PDFs for each URL.
+
+    Args:
+        urls (list): A list of URLs to process.
+    """
+    # Get the main directory (assuming this script is in the src folder)
+    main_directory = os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))
+    pdf_directory = os.path.join(main_directory, 'autodesk_pdfs')
+
+    # Create the directory if it does not exist
+    create_directory(pdf_directory)
+
+    # Set up the WebDriver
+    driver = setup_driver()
+
+    for url in urls:
+        print(f"Processing URL: {url}")
+        page_source = fetch_webpage(driver, url)
+
+        # Parse the webpage and find all PDF links
+        pdf_links = parse_pdf_links(page_source)
+
+        # Generate the base URL
+        base_url = get_base_url(url)
+
+        # Download the PDFs
+        if not pdf_links:
+            print(f"No PDF links found on the page: {url}")
+        else:
+            download_pdfs(pdf_links, pdf_directory, base_url)
+            print(f"All PDFs have been downloaded for URL: {url}")
+
+    # Quit the WebDriver
+    driver.quit()
+
+
 def download_pdfs(pdf_links, pdf_directory, base_url):
-    """Download each PDF from the list of PDF links.
+    """
+    Download each PDF from the list of PDF links.
 
     This function iterates over the list of PDF links, downloads each PDF,
     and saves it to the specified directory. It handles both absolute and
@@ -111,38 +172,18 @@ def download_pdfs(pdf_links, pdf_directory, base_url):
 
 
 def main():
+    """Main function to coordinate the PDF download process.
+
+    This function defines the URLs and calls the process_urls function
+    to handle the processing of each URL.
     """
-    Main function to coordinate the PDF download process.
+    urls = [
+        'https://www.research.autodesk.com/publications/#/page/1',
+        'https://www.research.autodesk.com/publications/#/page/2'
+        # Add more URLs as needed
+    ]
 
-    This function defines the URL and directory paths, sets up the WebDriver,
-    fetches the webpage, parses PDF links, creates the necessary directory, and
-    downloads the PDFs.
-    """
-    url = 'https://www.research.autodesk.com/publications/#/page/1'
-    base_url = 'https://www.research.autodesk.com'
-
-    # Get the main directory (assuming this script is in the src folder)
-    main_directory = os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__)))
-    pdf_directory = os.path.join(main_directory, 'downloaded_pdfs')
-
-    # Create the directory if it does not exist
-    create_directory(pdf_directory)
-
-    # Set up the WebDriver and fetch the webpage
-    driver = setup_driver()
-    page_source = fetch_webpage(driver, url)
-    driver.quit()
-
-    # Parse the webpage and find all PDF links
-    pdf_links = parse_pdf_links(page_source)
-
-    # Download the PDFs
-    if not pdf_links:
-        print("No PDF links found on the page.")
-    else:
-        download_pdfs(pdf_links, pdf_directory, base_url)
-        print('All PDFs have been downloaded.')
+    process_urls(urls)
 
 
 if __name__ == "__main__":
