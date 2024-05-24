@@ -121,20 +121,8 @@ dmypy.json
 
 # Temporary files
 data/temp/
-.vscode/settings.json
 .vscode/
 .config/
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
 
 # Data directories
 # data/
@@ -152,3 +140,8 @@ pytest.log
 # Commiting
 commit.txt
 commit.git
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
