@@ -1,45 +1,9 @@
 import os
-import time
 from urllib.parse import urlparse
 import requests
-from selenium import webdriver
 from bs4 import BeautifulSoup
-
-
-def setup_driver():
-    """
-    Set up the Selenium WebDriver.
-
-    This function initializes and returns a Selenium WebDriver Chrome instance.
-    Ensure that `chromedriver` is in your PATH or provide the path to it.
-
-    Returns:
-        webdriver.Chrome: A Selenium WebDriver instance for Chrome.
-    """
-    # Ensure chromedriver is in your PATH or provide the path to it
-    driver = webdriver.Chrome()
-    return driver
-
-
-def fetch_webpage(driver, url):
-    """
-    Fetch the webpage using Selenium and return the page source.
-
-    This function navigates to the specified URL using the provided WebDriver,
-    waits for the page to load completely, and returns the page source HTML.
-
-    Args:
-        driver (webdriver.Chrome): A Selenium WebDriver instance.
-        url (str): The URL of the webpage to fetch.
-
-    Returns:
-        str: The page source HTML of the fetched webpage.
-    """
-    driver.get(url)
-    # Wait for the page to load completely
-    time.sleep(10)  # Adjust the sleep time as needed
-    page_source = driver.page_source
-    return page_source
+from common.file_utils import create_directory
+from common.web_utils import setup_driver, fetch_webpage
 
 
 def parse_pdf_links(page_source):
@@ -63,19 +27,6 @@ def parse_pdf_links(page_source):
     return pdf_links
 
 
-def create_directory(directory_path):
-    """
-    Create the directory if it does not exist.
-
-    This function checks if the specified directory exists, and if not,
-    creates it.
-
-    Args:
-        directory_path (str): The path of the directory to create.
-    """
-    os.makedirs(directory_path, exist_ok=True)
-
-
 def get_base_url(url):
     """
     Generate the base URL from a given URL.
@@ -93,7 +44,7 @@ def get_base_url(url):
     return base_url
 
 
-def process_urls(urls):
+def process_pdf_urls(urls):
     """
     Process a list of URLs to download PDFs.
 
@@ -174,7 +125,7 @@ def download_pdfs(pdf_links, pdf_directory, base_url):
 def main():
     """Main function to coordinate the PDF download process.
 
-    This function defines the URLs and calls the process_urls function
+    This function defines the URLs and calls the process_pdf_urls function
     to handle the processing of each URL.
     """
     urls = [
@@ -183,7 +134,7 @@ def main():
         # Add more URLs as needed
     ]
 
-    process_urls(urls)
+    process_pdf_urls(urls)
 
 
 if __name__ == "__main__":
