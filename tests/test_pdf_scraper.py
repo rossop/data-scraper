@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 
 # Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../data_scraper')))
 
 from common.file_utils import create_directory
 from common.web_utils import setup_driver, fetch_webpage
