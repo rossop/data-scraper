@@ -1,8 +1,9 @@
 import time
 from selenium import webdriver
+from selenium.webdriver.chrome.webdriver import WebDriver
 
 
-def setup_driver():
+def setup_driver() -> WebDriver:
     """
     Set up the Selenium WebDriver.
 
@@ -17,7 +18,7 @@ def setup_driver():
     return driver
 
 
-def fetch_webpage(driver, url):
+def fetch_webpage(driver: WebDriver, url: str) -> str:
     """
     Fetch the webpage using Selenium and return the page source.
 
@@ -36,3 +37,6 @@ def fetch_webpage(driver, url):
     time.sleep(10)  # Adjust the sleep time as needed
     page_source = driver.page_source
     return page_source
+
+
+__all__ = ['setup_driver', 'fetch_webpage']

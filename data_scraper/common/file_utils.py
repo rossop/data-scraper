@@ -1,6 +1,6 @@
 import os
 
-def create_directory(directory_path):
+def create_directory(directory_path :str):
     """
     Create the directory if it does not exist.
 
@@ -11,3 +11,6 @@ def create_directory(directory_path):
         directory_path (str): The path of the directory to create.
     """
     os.makedirs(directory_path, exist_ok=True)
+
+
+__all__ = ['create_directory']
