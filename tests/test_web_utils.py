@@ -4,10 +4,7 @@ import pytest
 from unittest.mock import patch, Mock
 from selenium import webdriver
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../data_scraper')))
-
-from common.web_utils import setup_driver, fetch_webpage
+from data_scraper.common.web_utils import setup_driver, fetch_webpage
 
 
 def test_setup_driver():
@@ -24,7 +21,7 @@ def test_setup_driver():
     driver.quit()
 
 
-@patch('common.web_utils.webdriver.Chrome')
+@patch('data_scraper.common.web_utils.webdriver.Chrome')
 def test_fetch_webpage(mock_chrome):
     """Test the fetch_webpage function.
 

@@ -6,12 +6,9 @@ from unittest.mock import patch, Mock
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../data_scraper')))
-
-from common.file_utils import create_directory
-from common.web_utils import setup_driver, fetch_webpage
-from pdf.scraper import parse_pdf_links, get_base_url, process_pdf_urls, download_pdfs as dl_pdfs
+from data_scraper.common.file_utils import create_directory
+from data_scraper.common.web_utils import setup_driver, fetch_webpage
+from data_scraper.pdf.scraper import parse_pdf_links, get_base_url, process_pdf_urls, download_pdfs as dl_pdfs
 
 def test_parse_pdf_links():
     """Test the parse_pdf_links function.
@@ -69,7 +66,7 @@ def test_get_base_url(url, expected_base_url):
     """
     assert get_base_url(url) == expected_base_url
 
-@patch('pdf.scraper.requests.get')
+@patch('data_scraper.pdf.scraper.requests.get')
 def test_download_pdfs(mock_get, tmp_path):
     """Test the download_pdfs function.
 

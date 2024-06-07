@@ -2,10 +2,9 @@ import sys
 import os
 import pytest
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../data_scraper')))
 
-from common.file_utils import create_directory
+from data_scraper.common.file_utils import create_directory
+
 
 def test_create_directory(tmp_path):
     """Test the create_directory function.
