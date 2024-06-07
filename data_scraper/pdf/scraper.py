@@ -1,3 +1,21 @@
+"""
+PDF Scraper Module
+
+This module provides the core functionalities for extracting and 
+downloading PDF files from specified webpages. It includes functions 
+for setting up a Selenium WebDriver, fetching webpage contents, parsing 
+PDF links from the HTML, generating base URLs, and processing a list 
+of URLs to download the PDFs.
+
+Functions:
+    - parse_pdf_links: Parses the HTML to find all PDF links.
+    - get_base_url: Extracts the base URL from a given URL.
+    - process_pdf_urls: Processes a list of URLs to fetch, parse, and 
+      download PDFs.
+    - download_pdfs: Downloads the PDFs from the list of links.
+
+"""
+
 import os
 from urllib.parse import urlparse
 import requests
@@ -8,6 +26,8 @@ from bs4 import BeautifulSoup
 
 from data_scraper.common.file_utils import create_directory
 from data_scraper.common.web_utils import setup_driver, fetch_webpage
+
+__all__ = ['parse_pdf_links' , 'get_base_url', 'process_pdf_urls', 'download_pdfs']
 
 
 def parse_pdf_links(page_source :str) -> List[str]:
@@ -144,5 +164,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-__all__ = ['parse_pdf_links' , 'get_base_url', 'process_pdf_urls', 'download_pdfs']
