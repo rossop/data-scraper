@@ -146,7 +146,7 @@ def download_pdfs(pdf_links :List[str], pdf_directory :str, base_url :str):
             print(f'Error occurred: {e}')
 
 
-def main():
+def _example():
     """Main function to coordinate the PDF download process.
 
     This function defines the URLs and calls the process_pdf_urls function
@@ -162,5 +162,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _example()
 
