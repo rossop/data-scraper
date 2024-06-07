@@ -1,12 +1,16 @@
 import os
 from urllib.parse import urlparse
 import requests
+
+from typing import List
+
 from bs4 import BeautifulSoup
-from common.file_utils import create_directory
-from common.web_utils import setup_driver, fetch_webpage
+
+from data_scraper.common.file_utils import create_directory
+from data_scraper.common.web_utils import setup_driver, fetch_webpage
 
 
-def parse_pdf_links(page_source):
+def parse_pdf_links(page_source :str) -> List[str]:
     """
     Parse the webpage and find all PDF links.
 
@@ -27,7 +31,7 @@ def parse_pdf_links(page_source):
     return pdf_links
 
 
-def get_base_url(url):
+def get_base_url(url :str) -> str:
     """
     Generate the base URL from a given URL.
 
@@ -44,7 +48,7 @@ def get_base_url(url):
     return base_url
 
 
-def process_pdf_urls(urls):
+def process_pdf_urls(urls :str):
     """
     Process a list of URLs to download PDFs.
 
@@ -86,7 +90,7 @@ def process_pdf_urls(urls):
     driver.quit()
 
 
-def download_pdfs(pdf_links, pdf_directory, base_url):
+def download_pdfs(pdf_links :List[str], pdf_directory :str, base_url :str):
     """
     Download each PDF from the list of PDF links.
 
@@ -139,3 +143,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+__all__ = ['parse_pdf_links' , 'get_base_url', 'process_pdf_urls', 'download_pdfs']
