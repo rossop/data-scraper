@@ -1,6 +1,20 @@
+"""
+Web Utilities Module
+
+This module provides utilities for setting up a Selenium WebDriver 
+and fetching webpage contents. These utilities are used to facilitate 
+web scraping tasks.
+
+Functions:
+    - setup_driver: Sets up the Selenium WebDriver.
+    - fetch_webpage: Fetches the webpage using Selenium and returns the page source.
+"""
+
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.webdriver import WebDriver
+
+__all__ = ['setup_driver', 'fetch_webpage']
 
 
 def setup_driver() -> WebDriver:
@@ -37,6 +51,3 @@ def fetch_webpage(driver: WebDriver, url: str) -> str:
     time.sleep(10)  # Adjust the sleep time as needed
     page_source = driver.page_source
     return page_source
-
-
-__all__ = ['setup_driver', 'fetch_webpage']
