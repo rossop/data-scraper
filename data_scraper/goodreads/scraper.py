@@ -245,6 +245,15 @@ class GoodreadsScraper:
             'num_pages': None,
             'first_published': None
         }
+        
+        book_details_section = soup.find('div', class_='BookDetails')
+        if book_details_section:
+            pages_tag = book_details_section.find('p', attrs={'data-testid': 'pagesFormat'})
+            book_details['num_pages'] = pages_tag.text.split(',')[0].strip() if pages_tag else None
+            
+            publication_info_tag = book_details_section.find('p', attrs={'data-testid': 'publicationInfo'})
+            book_details['first_published'] = publication_info_tag.text.strip() if publication_info_tag else None
+
         return book_details
     
 
