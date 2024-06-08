@@ -186,7 +186,14 @@ class GoodreadsScraper:
             int or None: The extracted numeric value, or None if the tag is not 
                         found.
         """
-        return None
+        if span_tag:
+            ratings_text = span_tag.text
+            # Extract numeric part
+            ratings_number = ''.join(filter(str.isdigit, ratings_text))
+            return int(ratings_number) if ratings_number else None
+        else:
+            print("Tag not found")
+            return None
         
     @classmethod
     def _get_series_info(cls, soup):
@@ -204,6 +211,12 @@ class GoodreadsScraper:
             'series': None,
             'book_number': None
         }
+
+        # Example strategy using attributes
+        series_tag = soup.find('a', attrs={'href': re.compile(r'/series/')})
+        if series_tag and '#' in series_tag.text:
+            series_text = series_tag.text.strip()
+            series_info['series'], series_info['book_number'] = map(str.strip, series_text.split('#'))
         
         return series_info
 
