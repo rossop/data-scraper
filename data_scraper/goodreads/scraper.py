@@ -157,6 +157,21 @@ class GoodreadsScraper:
         Returns:
             str: The book description.
         """
+        try:
+            show_more_button = driver.find_element(By.XPATH, '//div[@class="BookPageMetadataSection__description"]//button[contains(text(), "Show more")]')
+            if show_more_button:
+                driver.execute_script("arguments[0].click();", show_more_button)
+                time.sleep(2)  # Wait for the full text to load
+                soup = BeautifulSoup(driver.page_source, 'html.parser')
+        except Exception as e:
+            print(f"Show more button for description not found: {e}")
+
+        description_tag = soup.find('div', class_='BookPageMetadataSection__description')
+        if description_tag:
+            show_more_text = description_tag.find('span', class_='Button__container--small')
+            if show_more_text:
+                show_more_text.extract()
+            return description_tag.text.strip()
         return None
 
     @staticmethod
