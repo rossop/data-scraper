@@ -100,7 +100,8 @@ class GoodreadsScraper:
         Returns:
             str: The book ID extracted from the URL.
         """
-        return None
+        book_url = driver.current_url
+        return book_url.split('/')[-1].split('-')[0]
     
     @classmethod
     def _get_title(cls, soup):
@@ -113,7 +114,8 @@ class GoodreadsScraper:
         Returns:
             str: The book title.
         """
-        return None
+        title_tag = soup.find('h1', class_='Text__title1', attrs={'data-testid': 'bookTitle'})
+        return title_tag.text.strip() if title_tag else None
     
     @classmethod
     def _get_authors(cls, soup):
@@ -126,7 +128,8 @@ class GoodreadsScraper:
         Returns:
             str: The book authors.
         """
-        return None
+        authors_tag = soup.find('span', class_='ContributorLink__name', attrs={'data-testid': 'name'})
+        return authors_tag.text.strip() if authors_tag else None
     
     @classmethod
     def _get_avg_rating(cls, soup):
