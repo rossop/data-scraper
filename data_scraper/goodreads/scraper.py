@@ -142,7 +142,8 @@ class GoodreadsScraper:
         Returns:
             float: The average rating.
         """
-        return None
+        avg_rating_tag = soup.find('div', class_='RatingStatistics__rating')
+        return float(avg_rating_tag.text.strip()) if avg_rating_tag else None
 
     @classmethod
     def _get_description(cls, driver, soup):
@@ -202,7 +203,17 @@ class GoodreadsScraper:
         Returns:
             dict: A dictionary containing the total and percentage of ratings for each star level.
         """
-        return None
+        ratings_histogram = {}
+        for star in range(5, 0, -1):  # Loop from 5 stars to 1 star
+            star_tag = soup.find('div', attrs={'data-testid': f'ratingBar-{star}'})
+            if star_tag:
+                label_total = star_tag.find('div', attrs={'data-testid': f'labelTotal-{star}'}).text
+                total_ratings, percentage = label_total.split(' ')
+                ratings_histogram[f'{star}_stars'] = {
+                    'total': int(total_ratings.replace(',', '')),
+                    'percentage': percentage.strip('()%')
+                }
+        return ratings_histogram
     
     @classmethod
     def _get_book_details(cls, soup):
