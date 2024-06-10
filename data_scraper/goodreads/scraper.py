@@ -29,9 +29,12 @@ GoodreadsScraper Methods:
 Note:
     Ensure that ChromeDriver is installed and added to your PATH for the webdriver to function correctly.
 """
-
+import random
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import time
 import re
@@ -60,10 +63,36 @@ class GoodreadsScraper:
         Returns:
             webdriver.Chrome: An instance of Chrome WebDriver.
         """
-        driver = webdriver.Chrome()  # Ensure ChromeDriver is in your PATH
+        ## Disable Image Loading
+        chrome_options = Options()
+        # chrome_options.add_argument("--headless")  # Run in headless mode
+        chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+        chrome_options.add_argument("--no-sandbox")  # Bypass OS security model, necessary for some environments
+
+        driver = webdriver.Chrome(options=chrome_options)
+        
+        # Enable DevTools Protocol and block images
+        driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.bmp"]})
+        driver.execute_cdp_cmd('Network.enable', {})
+
         driver.get(url)
         time.sleep(2)  # Wait for the page to load completely
         return driver
+    
+
+    @staticmethod
+    def _random_sleep(min_time=1, max_time=4):
+        """
+        Sleeps for a random amount of time between min_time and max_time seconds.
+
+        Args:
+            min_time (int): Minimum sleep time in seconds.
+            max_time (int): Maximum sleep time in seconds.
+        """
+        sleep_time = random.uniform(min_time, max_time)
+        time.sleep(sleep_time)
+
 
     @staticmethod
     def close_page(driver):
@@ -161,7 +190,7 @@ class GoodreadsScraper:
             show_more_button = driver.find_element(By.XPATH, '//div[@class="BookPageMetadataSection__description"]//button[contains(text(), "Show more")]')
             if show_more_button:
                 driver.execute_script("arguments[0].click();", show_more_button)
-                time.sleep(2)  # Wait for the full text to load
+                cls._random_sleep()  # Wait for the full text to load
                 soup = BeautifulSoup(driver.page_source, 'html.parser')
         except Exception as e:
             print(f"Show more button for description not found: {e}")
@@ -433,7 +462,7 @@ class GoodreadsScraper:
     
 
     @classmethod
-    def get_reviews(cls, driver, max_loops=20):
+    def get_reviews(cls, driver, max_loops=50):
         """
         Retrieves reviews from the current Goodreads page and continues to load more reviews if available.
 
@@ -446,48 +475,55 @@ class GoodreadsScraper:
         """
         loops = 0
         while loops < max_loops:
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-            review_cards = soup.find_all('article', class_='ReviewCard')
-
-            for card in review_cards:
-                review = {}
-                try:
-                    # Extract author details
-                    profile = card.find('div', class_='ReviewCard__profile')
-                    if profile:
-                        author_details = cls.get_author_details(profile)
-                        review.update(author_details)
-
-                    # Extract review content details
-                    review_content = card.find('section', class_='ReviewCard__content')
-                    review['rating'] = cls.get_rating(review_content)
-                    review['date'] = cls.get_review_date(review_content)
-                    review['review'] = review_content.find('div', class_='TruncatedContent__text').text.strip() if review_content.find('div', class_='TruncatedContent__text') else None
-                    review['review_link'] = cls.get_review_link(review_content)
-
-                    # Extract likes and comments
-                    social_footer = card.find('footer', class_='SocialFooter')
-                    if social_footer:
-                        likes_comments = cls.get_likes_comments(social_footer)
-                        review.update(likes_comments)
-
-                except AttributeError as e:
-                    print(f"Error processing review card: {e}")
-                yield review
-
             try:
-                # Find the "Show more reviews" button and click it
-                show_more_button = driver.find_element(By.XPATH, '//a[@aria-label="Tap to show more reviews and ratings"]')
-                if show_more_button:
-                    driver.execute_script("arguments[0].click();", show_more_button)
-                    time.sleep(2)  # Wait for new reviews to load
-                    loops += 1
-                else:
-                    print("No more 'Show more reviews' button found.")
-                    break
+                # Scroll down to the bottom of the page to ensure new content loads
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                cls._random_sleep()  # Wait for new reviews to load
+
+                # Define the button locator
+                show_more_button_locator = (By.XPATH, '//span[@data-testid="loadMore"]/ancestor::button')
+
+                # Wait for the button to be clickable and then find it
+                show_more_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(show_more_button_locator))
+
+                driver.execute_script("arguments[0].click();", show_more_button)
+                cls._random_sleep()  # Wait for new reviews to load
+                loops += 1
+
             except Exception as e:
                 print(f"Show more button not found or not clickable: {e}")
                 break
+
+        # After clicking the button max_loops times, parse all the reviews
+        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        review_cards = soup.find_all('article', class_='ReviewCard')
+
+        for card in review_cards:
+            review = {}
+            try:
+                # Extract author details
+                profile = card.find('div', class_='ReviewCard__profile')
+                if profile:
+                    author_details = cls.get_author_details(profile)
+                    review.update(author_details)
+
+                # Extract review content details
+                review_content = card.find('section', class_='ReviewCard__content')
+                review['rating'] = cls.get_rating(review_content)
+                review['date'] = cls.get_review_date(review_content)
+                review['review'] = review_content.find('div', class_='TruncatedContent__text').text.strip() if review_content.find('div', class_='TruncatedContent__text') else None
+                review['review_link'] = cls.get_review_link(review_content)
+
+                # Extract likes and comments
+                social_footer = card.find('footer', class_='SocialFooter')
+                if social_footer:
+                    likes_comments = cls.get_likes_comments(social_footer)
+                    review.update(likes_comments)
+
+                yield review
+
+            except AttributeError as e:
+                print(f"Error processing review card: {e}")
 
     @classmethod
     def scrape_urls(cls, urls):
@@ -513,10 +549,10 @@ class GoodreadsScraper:
         try:
             for url in urls:
                 driver.get(url)  # Navigate to the next URL
-                time.sleep(2)  # Wait for the page to load completely
                 metadata = cls.get_metadata(driver)
+                reviews_url = f"{url}/reviews"
+                driver.get(reviews_url) # Navigate to reviews URL
                 reviews = list(cls.get_reviews(driver))
-                print(len(reviews))
                 results.append({'url': url, 'metadata': metadata, 'reviews': reviews})
         finally:
             cls.close_page(driver)  # Ensure the browser is closed at the end
