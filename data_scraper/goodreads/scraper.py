@@ -269,7 +269,124 @@ class GoodreadsScraper:
 
         return book_details
     
+    @classmethod
+    def get_author_details(cls, profile):
+        """
+        Extracts author details from the profile section.
 
+        Args:
+            profile (bs4.element.Tag): The profile section tag.
+
+        Returns:
+            dict: A dictionary containing the author details.
+        """
+        author_details = {'author': None, 'author_profile': None, 'author_reviews': None, 'author_followers': None}
+        try:
+            # Extract author name and profile URL
+            author_tag = profile.find('div', class_='ReviewerProfile__name')
+            if author_tag:
+                author_details['author'] = author_tag.a.text.strip()
+                author_details['author_profile'] = author_tag.a['href'].split("/")[-1]
+
+            # Extract reviews and followers
+            meta_tag = profile.find('div', class_='ReviewerProfile__meta')
+            if meta_tag:
+                spans = meta_tag.find_all('span')
+                for span in spans:
+                    text = span.text.strip()
+                    if 'reviews' in text:
+                        author_details['author_reviews'] = text.split()[0].replace(',', '')
+                    elif 'followers' in text:
+                        author_details['author_followers'] = text.split()[0].replace(',', '')
+        except AttributeError as e:
+            print(f"Error extracting author details: {e}")
+
+        return author_details
+
+    @classmethod
+    def get_rating(cls, review_content):
+        """
+        Extracts the rating from the review content section.
+
+        Args:
+            review_content (bs4.element.Tag): The review content section tag.
+
+        Returns:
+            int: The rating given in the review.
+        """
+        try:
+            rating_tag = review_content.find('div', class_='ShelfStatus').find('span', class_='RatingStars')
+            if rating_tag and 'aria-label' in rating_tag.attrs:
+                rating_text = rating_tag['aria-label']
+                return int(rating_text.split()[1])
+        except AttributeError as e:
+            print(f"Error extracting rating: {e}")
+        return None
+
+    @classmethod
+    def get_review_date(cls, review_content):
+        """
+        Extracts the review date from the review content section.
+
+        Args:
+            review_content (bs4.element.Tag): The review content section tag.
+
+        Returns:
+            str: The date of the review.
+        """
+        try:
+            date_tag = review_content.find('span', class_='Text').find('a')
+            if date_tag:
+                return date_tag.text.strip()
+        except AttributeError as e:
+            print(f"Error extracting review date: {e}")
+        return None
+
+    @classmethod
+    def get_likes_comments(cls, social_footer):
+        """
+        Extracts the number of likes and comments from the social footer section.
+
+        Args:
+            social_footer (bs4.element.Tag): The social footer section tag.
+
+        Returns:
+            dict: A dictionary containing the number of likes and comments.
+        """
+        likes_comments = {'likes': 0, 'comments': 0}
+        try:
+            # Find spans with class 'Button__labelItem' that contain likes and comments
+            spans = social_footer.find_all('span', class_='Button__labelItem')
+            for span in spans:
+                text = span.text.strip()
+                if 'like' in text:
+                    likes_comments['likes'] = text
+                elif 'comment' in text:
+                    likes_comments['comments'] = text
+        except AttributeError as e:
+            print(f"Error extracting likes and comments: {e}")
+
+        return likes_comments
+    
+
+    @classmethod
+    def get_review_link(cls, review_content):
+        """
+        Extracts the review link from the review content section.
+
+        Args:
+            review_content (bs4.element.Tag): The review content section tag.
+
+        Returns:
+            str: The URL of the review.
+        """
+        try:
+            link_tag = review_content.find('a', href=True)
+            if link_tag:
+                return link_tag['href'].split("/")[-1]
+        except AttributeError as e:
+            print(f"Error extracting review link: {e}")
+        return None
 
     @classmethod
     def get_metadata(cls, driver):
@@ -314,18 +431,63 @@ class GoodreadsScraper:
         
         return metadata
     
+
     @classmethod
-    def get_reviews(cls, driver):
+    def get_reviews(cls, driver, max_loops=20):
         """
-        Retrieves reviews from the current Goodreads page.
+        Retrieves reviews from the current Goodreads page and continues to load more reviews if available.
 
         Args:
             driver (webdriver.Chrome): The instance of Chrome WebDriver.
+            max_loops (int): The maximum number of times to click the "Show more reviews" button.
 
         Yields:
             dict: A dictionary containing review data.
         """
-        return None
+        loops = 0
+        while loops < max_loops:
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+            review_cards = soup.find_all('article', class_='ReviewCard')
+
+            for card in review_cards:
+                review = {}
+                try:
+                    # Extract author details
+                    profile = card.find('div', class_='ReviewCard__profile')
+                    if profile:
+                        author_details = cls.get_author_details(profile)
+                        review.update(author_details)
+
+                    # Extract review content details
+                    review_content = card.find('section', class_='ReviewCard__content')
+                    review['rating'] = cls.get_rating(review_content)
+                    review['date'] = cls.get_review_date(review_content)
+                    review['review'] = review_content.find('div', class_='TruncatedContent__text').text.strip() if review_content.find('div', class_='TruncatedContent__text') else None
+                    review['review_link'] = cls.get_review_link(review_content)
+
+                    # Extract likes and comments
+                    social_footer = card.find('footer', class_='SocialFooter')
+                    if social_footer:
+                        likes_comments = cls.get_likes_comments(social_footer)
+                        review.update(likes_comments)
+
+                except AttributeError as e:
+                    print(f"Error processing review card: {e}")
+                yield review
+
+            try:
+                # Find the "Show more reviews" button and click it
+                show_more_button = driver.find_element(By.XPATH, '//a[@aria-label="Tap to show more reviews and ratings"]')
+                if show_more_button:
+                    driver.execute_script("arguments[0].click();", show_more_button)
+                    time.sleep(2)  # Wait for new reviews to load
+                    loops += 1
+                else:
+                    print("No more 'Show more reviews' button found.")
+                    break
+            except Exception as e:
+                print(f"Show more button not found or not clickable: {e}")
+                break
 
     @classmethod
     def scrape_urls(cls, urls):
@@ -353,7 +515,8 @@ class GoodreadsScraper:
                 driver.get(url)  # Navigate to the next URL
                 time.sleep(2)  # Wait for the page to load completely
                 metadata = cls.get_metadata(driver)
-                reviews = cls.get_reviews(driver)
+                reviews = list(cls.get_reviews(driver))
+                print(len(reviews))
                 results.append({'url': url, 'metadata': metadata, 'reviews': reviews})
         finally:
             cls.close_page(driver)  # Ensure the browser is closed at the end
